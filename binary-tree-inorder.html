@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Binary Tree — In-Order Traversal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --pink:    #fdb5ce;
+      --navy:    #132440;
+      --teal:    #16476a;
+      --seafoam: #3b9797;
+      --white:   #f9f3f6;
+      --dim:     rgba(249,243,246,.45);
+      --card:    rgba(22,71,106,0.45);
+      --border:  rgba(253,181,206,.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--navy);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 55% 45% at 85% 5%,  rgba(253,181,206,.10) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 55% at 10% 90%, rgba(59,151,151,.13)  0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      max-width: 900px; margin: 0 auto;
+      padding: 52px 24px 96px;
+    }
+
+    /* HEADER */
+    header { text-align: center; margin-bottom: 52px; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'Space Mono', monospace;
+      font-size: .63rem; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--seafoam);
+      border: 1px solid rgba(59,151,151,.38);
+      border-radius: 100px; padding: 5px 16px; margin-bottom: 20px;
+    }
+    .dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--seafoam);
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.65)} }
+
+    header h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      line-height: 1.1; letter-spacing: -.02em;
+      color: var(--pink);
+    }
+    header h1 em { font-style: italic; color: var(--seafoam); }
+    header p {
+      margin-top: 14px; font-size: .9rem; font-weight: 300;
+      color: var(--dim);
+    }
+
+    /* CARD */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(12px);
+    }
+
+    .sec-label {
+      font-family: 'Space Mono', monospace;
+      font-size: .63rem; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--pink); opacity: .5;
+      margin-bottom: 14px;
+    }
+
+    /* INPUT */
+    .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    input[type="text"] {
+      flex: 1; min-width: 160px;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(253,181,206,.2);
+      border-radius: 10px;
+      padding: 13px 18px;
+      color: var(--white);
+      font-family: 'Space Mono', monospace; font-size: .9rem;
+      outline: none;
+      transition: border-color .2s, background .2s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--pink);
+      background: rgba(253,181,206,.05);
+    }
+    input[type="text"]::placeholder { color: rgba(249,243,246,.22); }
+
+    button {
+      cursor: pointer; border: none; border-radius: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: .8rem; font-weight: 700; letter-spacing: .04em;
+      padding: 13px 22px;
+      transition: transform .12s, opacity .15s, background .18s;
+      white-space: nowrap;
+    }
+    button:active { transform: scale(.96); }
+
+    .btn-pink  { background: var(--pink); color: var(--navy); }
+    .btn-pink:hover { opacity: .85; }
+    .btn-teal  { background: transparent; border: 1.5px solid rgba(59,151,151,.5); color: var(--seafoam); }
+    .btn-teal:hover { border-color: var(--seafoam); background: rgba(59,151,151,.1); }
+    .btn-ghost { background: transparent; border: 1.5px solid rgba(249,243,246,.12); color: rgba(249,243,246,.4); }
+    .btn-ghost:hover { border-color: rgba(249,243,246,.3); color: var(--white); }
+
+    /* PILLS */
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+    .ex-lbl { font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(249,243,246,.22); }
+    .pill {
+      cursor: pointer;
+      font-family: 'Space Mono', monospace; font-size: .72rem;
+      background: rgba(59,151,151,.1); border: 1px solid rgba(59,151,151,.28);
+      border-radius: 100px; padding: 4px 13px; color: var(--seafoam);
+      transition: background .18s, border-color .18s;
+      user-select: none;
+    }
+    .pill:hover { background: rgba(59,151,151,.22); border-color: var(--seafoam); }
+
+    /* ERROR */
+    .err {
+      font-family: 'Space Mono', monospace; font-size: .74rem;
+      color: #ff8fa3; margin-top: 10px; display: none;
+    }
+
+    /* CANVAS */
+    #treeCanvas {
+      display: block; width: 100%;
+      border-radius: 12px;
+      background: rgba(0,0,0,.14);
+    }
+
+    /* OUTPUT */
+    .rule-bar {
+      font-family: 'Space Mono', monospace; font-size: .7rem;
+      color: var(--dim); margin-bottom: 16px;
+    }
+    .rule-bar span { color: var(--pink); }
+
+    .anim-row {
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .anim-lbl { font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+
+    .output-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .out-lbl {
+      font-family: 'Space Mono', monospace; font-size: .68rem;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--pink); opacity: .55; min-width: 72px;
+    }
+    .chips { display: flex; gap: 7px; flex-wrap: wrap; }
+
+    .chip {
+      font-family: 'Space Mono', monospace; font-size: .88rem;
+      padding: 6px 14px; border-radius: 8px;
+      background: rgba(253,181,206,.1);
+      border: 1px solid rgba(253,181,206,.22);
+      color: var(--pink);
+      opacity: 0; transform: translateY(6px);
+      transition: opacity .3s, transform .3s, background .22s, color .22s, border-color .22s;
+    }
+    .chip.show    { opacity: 1; transform: translateY(0); }
+    .chip.lit     { background: var(--pink); color: var(--navy); border-color: var(--pink); }
+    .chip.visited { background: rgba(59,151,151,.22); border-color: var(--seafoam); color: #a4dcdc; }
+
+    .status {
+      font-family: 'Space Mono', monospace; font-size: .74rem;
+      color: var(--dim); margin-top: 14px; min-height: 1.2em;
+    }
+    .status.done { color: var(--seafoam); }
+
+    @media (max-width: 520px) {
+      .card { padding: 20px 18px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="badge"><span class="dot"></span>Algorithm Visualizer</div>
+    <h1>Binary Tree<br/><em>In-Order Traversal</em></h1>
+    <p>Enter numbers separated by commas → tree draws itself → see the traversal</p>
+  </header>
+
+  <!-- INPUT -->
+  <div class="card">
+    <div class="sec-label">// Input — level-order array</div>
+    <div class="input-row">
+      <input type="text" id="inputArr" placeholder="e.g.  1, 2, 3, 4, 5"/>
+      <button class="btn-pink"  onclick="build()">Visualize</button>
+      <button class="btn-ghost" onclick="clearAll()">Clear</button>
+    </div>
+    <p class="err" id="errMsg"></p>
+    <div class="examples">
+      <span class="ex-lbl">Examples:</span>
+      <div class="pill" onclick="loadEx('1,2,3,4,5')">1,2,3,4,5</div>
+      <div class="pill" onclick="loadEx('5,3,8,1,4,7,9')">5,3,8,1,4,7,9</div>
+      <div class="pill" onclick="loadEx('4,2,6,1,3,5,7')">Perfect tree</div>
+      <div class="pill" onclick="loadEx('10,5,15,3,7,null,18')">BST with null</div>
+      <div class="pill" onclick="loadEx('1')">Single node</div>
+    </div>
+  </div>
+
+  <!-- TREE -->
+  <div class="card">
+    <div class="sec-label">// Tree Diagram</div>
+    <canvas id="treeCanvas" height="340"></canvas>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="card" id="outputCard" style="display:none">
+    <div class="sec-label">// In-Order Output</div>
+
+    <div class="rule-bar">Rule: <span>Left subtree</span> → <span>Root</span> → <span>Right subtree</span></div>
+
+    <div class="anim-row">
+      <span class="anim-lbl">Animate:</span>
+      <button class="btn-teal" id="animBtn" onclick="play()">▶ Play</button>
+    </div>
+
+    <div class="output-row">
+      <div class="out-lbl">Output:</div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+
+</div>
+<script>
+// Palette
+const C = {
+  nodeFill:   '#16476a',
+  nodeStroke: '#fdb5ce',
+  activeF:    '#fdb5ce',
+  activeS:    '#132440',
+  visitF:     '#3b9797',
+  text:       '#f9f3f6',
+  edge:       'rgba(253,181,206,0.2)',
+  edgeVisit:  'rgba(59,151,151,0.5)',
+};
+
+let root = null, traversal = [], stepIdx = -1, timer = null, playing = false;
+
+// Build tree from level-order array (nulls respected)
+function buildTree(arr) {
+  if (!arr.length || arr[0] === null) return null;
+  const r = mk(arr[0]);
+  const q = [r];
+  let i = 1;
+  while (q.length && i < arr.length) {
+    const n = q.shift();
+    if (i < arr.length) { if (arr[i] !== null) { n.left = mk(arr[i]); q.push(n.left); } i++; }
+    if (i < arr.length) { if (arr[i] !== null) { n.right = mk(arr[i]); q.push(n.right); } i++; }
+  }
+  return r;
+}
+const mk = v => ({ val: v, left: null, right: null });
+
+function inOrder(n, res = []) {
+  if (!n) return res;
+  inOrder(n.left, res);
+  res.push(n.val);
+  inOrder(n.right, res);
+  return res;
+}
+
+function depth(n) { return n ? 1 + Math.max(depth(n.left), depth(n.right)) : 0; }
+
+function layout(n, d, lo, hi, out) {
+  if (!n) return;
+  out.push({ node: n, x: (lo + hi) / 2, y: d });
+  layout(n.left,  d + 1, lo, (lo + hi) / 2, out);
+  layout(n.right, d + 1, (lo + hi) / 2, hi, out);
+}
+
+const canvas = document.getElementById('treeCanvas');
+const ctx    = canvas.getContext('2d');
+const R = 22;
+
+function toXY(nx, ny, W, H, maxD) {
+  const px = 44, py = 48, rows = Math.max(maxD - 1, 1);
+  return { x: px + nx * (W - px * 2), y: py + ny * ((H - py * 2) / rows) };
+}
+
+function draw(activeVal = null, visited = new Set()) {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  if (!root) return;
+
+  const maxD = depth(root);
+  const pos  = [];
+  layout(root, 0, 0, 1, pos);
+
+  const map = new Map(pos.map(p => [p.node, toXY(p.x, p.y, W, H, maxD)]));
+
+  // edges
+  for (const { node } of pos) {
+    const { x: x1, y: y1 } = map.get(node);
+    for (const child of [node.left, node.right]) {
+      if (!child) continue;
+      const { x: x2, y: y2 } = map.get(child);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+      ctx.strokeStyle = visited.has(child.val) ? C.edgeVisit : C.edge;
+      ctx.lineWidth   = visited.has(child.val) ? 2 : 1.5;
+      ctx.stroke();
+    }
+  }
+
+  // nodes
+  for (const { node } of pos) {
+    const { x, y } = map.get(node);
+    const isA = activeVal !== null && node.val === activeVal;
+    const isV = visited.has(node.val);
+
+    ctx.shadowColor = isA ? '#fdb5ce' : isV ? '#3b9797' : 'transparent';
+    ctx.shadowBlur  = isA ? 22 : isV ? 10 : 0;
+
+    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2);
+    ctx.fillStyle   = isA ? C.activeF : isV ? C.visitF : C.nodeFill;
+    ctx.fill();
+    ctx.strokeStyle = isA ? C.activeF : C.nodeStroke;
+    ctx.lineWidth   = isA ? 2.5 : 1.8;
+    ctx.stroke();
+    ctx.shadowBlur  = 0;
+
+    ctx.fillStyle    = isA ? C.activeS : C.text;
+    ctx.font         = `bold ${Math.round(R * .78)}px 'Space Mono', monospace`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(node.val), x, y);
+  }
+}
+
+function build() {
+  stop();
+  const raw = document.getElementById('inputArr').value.trim();
+  const err = document.getElementById('errMsg');
+  err.style.display = 'none';
+
+  if (!raw) { showErr('Enter at least one number.'); return; }
+
+  const parts = raw.split(',').map(s => s.trim());
+  const arr = parts.map(p => {
+    if (!p || p.toLowerCase() === 'null') return null;
+    const n = Number(p);
+    return isNaN(n) ? 'ERR' : n;
+  });
+
+  if (arr.includes('ERR')) { showErr('Use comma-separated integers, or "null" to skip a position.'); return; }
+  if (arr.filter(v => v !== null).length > 63) { showErr('Max 63 nodes for readability.'); return; }
+
+  root      = buildTree(arr);
+  traversal = inOrder(root);
+  stepIdx   = -1;
+  playing   = false;
+
+  canvas.width  = canvas.offsetWidth || 860;
+  canvas.height = Math.max(200, depth(root) * 92 + 56);
+
+  draw();
+  renderChips();
+  document.getElementById('outputCard').style.display = 'block';
+  document.getElementById('status').textContent = '';
+  document.getElementById('status').className = 'status';
+  document.getElementById('animBtn').textContent = '▶ Play';
+}
+
+function clearAll() {
+  stop(); root = null; traversal = []; stepIdx = -1; playing = false;
+  document.getElementById('inputArr').value = '';
+  document.getElementById('outputCard').style.display = 'none';
+  document.getElementById('errMsg').style.display = 'none';
+  canvas.width  = canvas.offsetWidth || 860;
+  canvas.height = 340;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function loadEx(v) { document.getElementById('inputArr').value = v; build(); }
+function showErr(m) { const e = document.getElementById('errMsg'); e.textContent = m; e.style.display = 'block'; }
+
+function renderChips(activeIdx = -1, visitedSet = new Set()) {
+  const box = document.getElementById('chips');
+  box.innerHTML = '';
+  traversal.forEach((val, i) => {
+    const c = document.createElement('div');
+    c.className = 'chip' + (i === activeIdx ? ' lit' : visitedSet.has(val) ? ' visited' : '');
+    c.textContent = val;
+    box.appendChild(c);
+    requestAnimationFrame(() => setTimeout(() => c.classList.add('show'), i * 55));
+  });
+}
+
+function play() {
+  clearInterval(timer); timer = null;
+  stepIdx = -1; playing = true;
+  draw(); renderChips();
+  document.getElementById('status').textContent = '';
+  document.getElementById('status').className = 'status';
+  timer = setInterval(() => {
+    stepIdx++;
+    if (stepIdx >= traversal.length) {
+      clearInterval(timer); timer = null; playing = false;
+      draw(null, new Set(traversal));
+      renderChips(-1, new Set(traversal));
+      const s = document.getElementById('status');
+      s.textContent = '✓ Complete — ' + traversal.join(' → ');
+      s.className = 'status done';
+      return;
+    }
+    const visited = new Set(traversal.slice(0, stepIdx));
+    draw(traversal[stepIdx], visited);
+    renderChips(stepIdx, visited);
+    document.getElementById('status').textContent =
+      `Visiting node ${traversal[stepIdx]}  (step ${stepIdx + 1} / ${traversal.length})`;
+  }, 800);
+}
+
+function stop() {
+  playing = false; clearInterval(timer); timer = null;
+}
+
+window.addEventListener('load', () => { canvas.width = canvas.offsetWidth || 860; canvas.height = 340; });
+window.addEventListener('resize', () => { if (root) build(); else { canvas.width = canvas.offsetWidth || 860; canvas.height = 340; ctx.clearRect(0,0,canvas.width,canvas.height); } });
+document.getElementById('inputArr').addEventListener('keydown', e => { if (e.key === 'Enter') build(); });
+</script>
+</body>
+</html>
