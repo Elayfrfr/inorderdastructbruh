@@ -146,6 +146,7 @@
     }
 
     /* CANVAS */
+    .card-tree { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
     #treeCanvas {
       display: block; width: 100%;
       border-radius: 12px;
@@ -226,7 +227,7 @@
   </div>
 
   <!-- TREE -->
-  <div class="card">
+  <div class="card card-tree">
     <div class="sec-label">// Tree Diagram</div>
     <canvas id="treeCanvas" height="340"></canvas>
   </div>
@@ -281,10 +282,11 @@ function buildTree(arr) {
 }
 const mk = v => ({ val: v, left: null, right: null });
 
+// traversal is array of node references (not values) so duplicates are tracked by identity
 function inOrder(n, res = []) {
   if (!n) return res;
   inOrder(n.left, res);
-  res.push(n.val);
+  res.push(n);  // push the node object, not just val
   inOrder(n.right, res);
   return res;
 }
@@ -307,7 +309,7 @@ function toXY(nx, ny, W, H, maxD) {
   return { x: px + nx * (W - px * 2), y: py + ny * ((H - py * 2) / rows) };
 }
 
-function draw(activeVal = null, visited = new Set()) {
+function draw(activeNode = null, visited = new Set()) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
   if (!root) return;
@@ -325,8 +327,8 @@ function draw(activeVal = null, visited = new Set()) {
       if (!child) continue;
       const { x: x2, y: y2 } = map.get(child);
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-      ctx.strokeStyle = visited.has(child.val) ? C.edgeVisit : C.edge;
-      ctx.lineWidth   = visited.has(child.val) ? 2 : 1.5;
+      ctx.strokeStyle = visited.has(child) ? C.edgeVisit : C.edge;
+      ctx.lineWidth   = visited.has(child) ? 2 : 1.5;
       ctx.stroke();
     }
   }
@@ -334,8 +336,8 @@ function draw(activeVal = null, visited = new Set()) {
   // nodes
   for (const { node } of pos) {
     const { x, y } = map.get(node);
-    const isA = activeVal !== null && node.val === activeVal;
-    const isV = visited.has(node.val);
+    const isA = activeNode !== null && node === activeNode;
+    const isV = visited.has(node);
 
     ctx.shadowColor = isA ? '#fdb5ce' : isV ? '#3b9797' : 'transparent';
     ctx.shadowBlur  = isA ? 22 : isV ? 10 : 0;
@@ -406,10 +408,10 @@ function showErr(m) { const e = document.getElementById('errMsg'); e.textContent
 function renderChips(activeIdx = -1, visitedSet = new Set()) {
   const box = document.getElementById('chips');
   box.innerHTML = '';
-  traversal.forEach((val, i) => {
+  traversal.forEach((nodeObj, i) => {
     const c = document.createElement('div');
-    c.className = 'chip' + (i === activeIdx ? ' lit' : visitedSet.has(val) ? ' visited' : '');
-    c.textContent = val;
+    c.className = 'chip' + (i === activeIdx ? ' lit' : visitedSet.has(traversal[i]) ? ' visited' : '');
+    c.textContent = nodeObj.val;
     box.appendChild(c);
     requestAnimationFrame(() => setTimeout(() => c.classList.add('show'), i * 55));
   });
@@ -428,7 +430,7 @@ function play() {
       draw(null, new Set(traversal));
       renderChips(-1, new Set(traversal));
       const s = document.getElementById('status');
-      s.textContent = '✓ Complete — ' + traversal.join(' → ');
+      s.textContent = '✓ Complete — ' + traversal.map(n => n.val).join(' → ');
       s.className = 'status done';
       return;
     }
@@ -436,7 +438,7 @@ function play() {
     draw(traversal[stepIdx], visited);
     renderChips(stepIdx, visited);
     document.getElementById('status').textContent =
-      `Visiting node ${traversal[stepIdx]}  (step ${stepIdx + 1} / ${traversal.length})`;
+      `Visiting node ${traversal[stepIdx].val}  (step ${stepIdx + 1} / ${traversal.length})`;
   }, 800);
 }
 
